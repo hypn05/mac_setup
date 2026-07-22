@@ -9,5 +9,6 @@ ensure_homebrew
 brew_bundle "$SCRIPT_DIR/Brewfile.k8s"
 
 echo ""
-echo "k8s module done: kubectl, kubectx, kubens, k9s are installed."
+echo "k8s module done: kubectl, kubectx, kubens, k9s, stern are installed."
 echo "  - kubectx/kubens become interactive fuzzy-pickers automatically if fzf is installed (the 'zsh' module installs it)."
+echo "  - shortcuts (after zsh module): k9 → k9s, kstern → stern, kx/kn → kubectx/kubens"

@@ -21,3 +21,10 @@ brew "tlrc"        # tldr client (simplified man pages)
 
 # Data munging
 brew "yq"   # YAML/JSON/XML processor (the jq of YAML)
+
+# Terminal editor + markdown
+brew "helix"  # modal editor with LSP/tree-sitter (binary: hx) — default EDITOR
+brew "glow"   # render markdown in the terminal
+
+# Multiplexer
+brew "tmux"   # sessions/windows/panes — config: tmux/tmux.conf, help: thelp / sc tmux

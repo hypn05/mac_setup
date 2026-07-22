@@ -13,7 +13,7 @@ Modular new-Mac setup. Each module is independent — install only what you need
 | `git`    | `git`, `gh` (+ curated `gh` aliases), `git-delta`, `lazygit`, and `~/.gitconfig` |
 | `docker` | Docker Desktop (Engine, CLI, Compose v2) |
 | `k8s`    | `kubectl`, `kubectx`/`kubens`, `k9s`, `stern` |
-| `zsh`    | oh-my-zsh + plugins, starship prompt, modern CLI tools, `~/.zsh/shortcut.zsh` |
+| `zsh`    | oh-my-zsh + plugins, starship prompt, modern CLI tools, `~/.zsh/shortcuts.zsh` |
 | `iterm`  | iTerm2, a Nerd Font, and iTerm2 shell integration |
 | `all`    | every module above |
 
@@ -35,97 +35,85 @@ install.sh              dispatcher — parses args, calls modules/<name>.sh
 modules/
   lib.sh                 shared helpers (brew bundle, symlink, clone — all idempotent)
   git.sh docker.sh k8s.sh zsh.sh iterm.sh
-Brewfile.git / .docker / .k8s / .zsh / .iterm   one per module, only pulled in by its own module
+Brewfile.git / .docker / .k8s / .zsh / .iterm   one per module
 git/gitconfig.template   copied to ~/.gitconfig once (yours to edit after)
 zsh/
   zshrc                   symlinked to ~/.zshrc — edit it here, not the symlink
-  shortcut.zsh             symlinked to ~/.zsh/shortcut.zsh — the `sc` command
-  zshrc.secrets.template   copied to ~/.zshrc.secrets once, chmod 600, never committed
+  shortcuts.zsh           symlinked to ~/.zsh/shortcuts.zsh — curated `sc` registry
+  shortcut.zsh            thin redirect for older name (also linked)
+  zshrc.secrets.template  copied to ~/.zshrc.secrets once, chmod 600, never committed
 starship.toml             symlinked to ~/.config/starship.toml
 ```
 
-Config files (`zshrc`, `shortcut.zsh`, `starship.toml`) are **symlinked** so
+Config files (`zshrc`, `shortcuts.zsh`, `starship.toml`) are **symlinked** so
 edits in the repo take effect immediately — re-run the module to relink after
 a fresh clone. Personal files (`.gitconfig`, `.zshrc.secrets`) are **copied
-once** and then left alone, since they hold machine- or person-specific data
-that shouldn't round-trip back into the template.
+once** and then left alone.
 
 ## The zsh setup
 
-**Theme:** oh-my-zsh's `jonathan` theme, but starship (see below) overrides
-the visible prompt whenever it's installed — the omz theme only matters as a
-fallback if starship is ever missing.
+**Theme:** no OMZ theme (`ZSH_THEME=""`). **Starship** owns the prompt.
 
 **Plugins:** git, brew, macos, sudo, colored-man-pages, colorize, dotenv,
-python, pip, autojump, zsh-autosuggestions, zsh-syntax-highlighting, kubectl,
-fzf, docker, extract, copyfile, copypath, alias-finder, you-should-use,
-fzf-tab. The last four aren't bundled with oh-my-zsh core; the `zsh` module
-clones them into `$ZSH_CUSTOM/plugins`. `fzf-tab` (fuzzy, fzf-powered tab
-completion) is deliberately last in the `plugins=(...)` list — it needs to
-load after every other plugin that touches completion, and it replaces the
-classic completion menu, which is why `zstyle ':completion:*' menu no` is
-set instead of `menu select`.
+python, pip, autojump, kubectl, fzf, docker, extract, copyfile, copypath,
+alias-finder, **fzf-tab** (before autosuggestions), zsh-autosuggestions,
+you-should-use, zsh-syntax-highlighting (**last**). Custom plugins are cloned
+into `$ZSH_CUSTOM/plugins` by the zsh module.
 
-History search is handled by **atuin** instead of an omz plugin — a
-SQLite-backed Ctrl+R / up-arrow search with context (cwd, exit code,
-duration). It's local-only until you opt into sync with `atuin login`.
+**History:** **atuin** (SQLite-backed Ctrl+R / up-arrow) instead of an OMZ
+history-substring plugin. Local-only until you opt into `atuin login`.
 
-**Prompt:** `~/.config/starship.toml` — directory, git branch/status,
-kubernetes context, docker context, python venv, direnv status, and command
-duration (only shown past 2s). AWS/gcloud/package modules are explicitly
-silenced since they're not part of this toolchain and would otherwise add
-noise. Needs a Nerd Font — the `iterm` module installs one, but you still
-have to set it as the profile font by hand (see below).
+**Prompt:** calm left / right layout in `starship.toml` — directory + git on
+the left; python venv, k8s context, docker context, direnv, and slow-command
+duration on the right. No emoji icons by default. AWS/gcloud/package modules
+are silenced.
 
-**`sc` / `shortcut`:** `~/.zsh/shortcut.zsh` is a live cheatsheet over every
-alias currently loaded (reads from `alias`, so it's always accurate — no
-hand-maintained list to go stale):
+**Venv-safe prompt:** `VIRTUAL_ENV_DISABLE_PROMPT=1` and
+`unset _OLD_VIRTUAL_PS1` after Starship so `source .venv/bin/activate` cannot
+wipe the prompt. Prefer project envs via **direnv**.
+
+**`sc` / `shortcuts`:** curated registry with categories + descriptions
+(git, k8s, docker/compose, files, search, util, keys, editor, tmux). Also:
 
 ```sh
-sc                 # interactive fuzzy search (needs fzf), else prints help
-sc git              # aliases whose name or expansion mentions "git"
-sc kubectl          # same idea, e.g. all the kubectl-plugin shortcuts
-sc query <term>     # explicit form of the above
-sc --list           # everything, in one table
+sc                 # interactive browser (fzf)
+sc git | sc docker # category filter
+sc --live          # every currently loaded alias (OMZ + yours)
+sc --list          # full curated table
 ```
 
-Multi-entry results always open through a full-screen pager (`less -M` by
-default, or `$PAGER` if you've set one), the same alternate-screen behavior
-`man` uses — no leftover scrollback clutter.
+**you-should-use** reminds you after you type a long form (`git status` → use
+`gst`). Configured with `YSU_MESSAGE_POSITION=after`, `YSU_MODE=BESTMATCH`,
+and `YSU_IGNORED_ALIASES=(g k)`.
 
-This is separate from the **you-should-use** plugin, which is the thing that
-actually nudges you *after* you type something out longhand (e.g. type
-`kubectl get pods`, get told you could've used `kgp`) — configured here with
-`YSU_MESSAGE_POSITION=after` and `YSU_MODE=BESTMATCH` so it shows one
-best-match suggestion after the command runs, not a wall of options before.
+**Modern CLI tools (Brewfile.zsh):** starship, zoxide, autojump, direnv, atuin,
+fzf, fd, ripgrep, bat, eza, dust, duf, tlrc, yq, **helix** (`hx`), **glow**.
 
-**Modern CLI tools wired into `.zshrc`:**
-- `bat` → aliased to `cat`
-- `eza` → aliased to `ls` / `ll` / `la` / `lt`, and to `fzf-tab`'s `cd` preview
-- `lazygit` → aliased to `lg`
-- `starship`, `zoxide`, `direnv`, `atuin` → hooked via `eval "$(... init zsh)"`
-- `fzf` → file search backed by `fd` (via `FZF_DEFAULT_COMMAND`), tab completion via `fzf-tab`
-- `git-delta` → wired in as git's pager in `gitconfig.template`, not `.zshrc`
-- iTerm2 shell integration → sourced if the `iterm` module has installed it
+**Editor:** Helix is the default `EDITOR` / `VISUAL` / `GIT_EDITOR` / `KUBE_EDITOR`.
+Config at `helix/config.toml` → `~/.config/helix/config.toml`. Helpers:
+`e` (edit path/cwd), `ef` (fuzzy file), `eg` (git-changed files), `ze` (zoxide + edit),
+`hxconfig`, `mdv` (glow). Tutorial: `hx --tutor`.
 
-Installed but intentionally alias-free: `ripgrep` (`rg`), `dust`, `duf`,
-`yq`, `tlrc` (`tldr`), `kubectx`/`kubens`, `k9s`, `stern` — short enough
-already, and aliasing over core utils like `du`/`df`/`grep` risks breaking
-muscle memory or scripts that expect their exact output.
+**tmux:** config at `tmux/tmux.conf` → `~/.tmux.conf` (prefix **Ctrl-a**, mouse,
+vim-style panes). Shell helpers: `tn` / `ta` / `ts` / `tls` / `tk` / `thelp`.
+Cheatsheet: `thelp` or `sc tmux`.
 
-`gh` gets its own alias namespace (`gh <alias>`, separate from shell
-aliases): `gh prc` (`pr create --fill`), `gh prv` (`pr view --web`), `gh prl`
-(`pr list`), `gh prco` (`pr checkout`), `gh prw` (`pr checks --watch`). See
-them anytime with `gh alias list`.
+**Also wired:**
+- FZF defaults backed by `fd` (Ctrl+T / Alt+C)
+- Word movement (Ctrl+←/→)
+- Large shared history (50k, share + inc-append + dedupe)
+- `DISABLE_UNTRACKED_FILES_DIRTY` for big repos
+- Fuzzy helpers: `gcof` (git checkout), `dsh` / `dlof` (docker shell / logs)
 
-**Shell options:** `HYPHEN_INSENSITIVE`, `COMPLETION_WAITING_DOTS`, and a
-beefed-up history setup (50k entries, shared live across sessions, deduped)
-— that last one matters more than usual here since `ZSH_AUTOSUGGEST_STRATEGY`
-and atuin are both driven directly off your history.
+**k8s module extras:** `k9s`, `stern` (+ `k9` / `kstern` shortcuts when present).
+
+**git module:** delta (side-by-side), lazygit, `gh` aliases
+(`prc`, `prv`, `prl`, `prco`, `prw`), sensible defaults
+(`pull.rebase`, `push.autoSetupRemote`, `init.defaultBranch=main`).
 
 ## Manual follow-ups (can't be scripted)
 
-1. **docker**: open Docker Desktop once to finish onboarding; enable Kubernetes under Settings → Kubernetes if you want a local cluster from it instead of the `k8s` module.
-2. **git**: edit `~/.gitconfig` (name/email) if it was just created; run `gh auth login`.
-3. **iterm**: Preferences → Profiles → Text → Font → set to "Hack Nerd Font", so starship's icons render instead of showing as boxes.
-4. **zsh**: restart your shell (`exec zsh`) to pick everything up; add real values to `~/.zshrc.secrets`; run `atuin login` if you want history synced across machines (it works local-only without this).
+1. **docker**: open Docker Desktop once; enable Kubernetes in Settings if you want a local cluster from it.
+2. **git**: edit `~/.gitconfig` (name/email) if just created; run `gh auth login`.
+3. **iterm**: Preferences → Profiles → Text → Font → "Hack Nerd Font" only if you re-enable icon glyphs.
+4. **zsh**: `exec zsh`; fill `~/.zshrc.secrets`; optional `atuin login` for multi-machine history sync.

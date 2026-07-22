@@ -17,8 +17,8 @@ Usage: ./install.sh <module> [module ...]
 Modules (mix and match — nothing here depends on another module):
   git      git, gh, git-delta, lazygit, and ~/.gitconfig
   docker   Docker Desktop (Engine, CLI, Compose v2)
-  k8s      kubectl, kubectx/kubens, k9s
-  zsh      oh-my-zsh + plugins, starship prompt, modern CLI tools, ~/.zsh/shortcut.zsh
+  k8s      kubectl, kubectx/kubens, k9s, stern
+  zsh      oh-my-zsh + plugins, starship, modern CLI tools, ~/.zsh/shortcuts.zsh
   iterm    iTerm2 + Nerd Font
   all      every module above
 

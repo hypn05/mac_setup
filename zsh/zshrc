@@ -3,95 +3,164 @@
 # ── oh-my-zsh ────────────────────────────────────────────────────────────
 export ZSH="$HOME/.oh-my-zsh"
 
-# starship (initialized below) overrides the visual prompt whenever it's
-# installed, so this theme only actually shows if starship is ever missing.
-ZSH_THEME="jonathan"
+# Starship owns the prompt (initialized near the end). Empty OMZ theme avoids
+# double prompt work; jonathan is available as a fallback only if you re-enable it.
+ZSH_THEME=""
 
-HYPHEN_INSENSITIVE="true"     # `_` and `-` are interchangeable when tab-completing
-COMPLETION_WAITING_DOTS="true" # show dots while waiting on a slow completion
+HYPHEN_INSENSITIVE="true"
+COMPLETION_WAITING_DOTS="true"
+DISABLE_UNTRACKED_FILES_DIRTY="true"   # faster git status in large repos
+HIST_STAMPS="yyyy-mm-dd"
 
 # zsh-autosuggestions
 ZSH_AUTOSUGGEST_STRATEGY=(history completion)
 ZSH_AUTOSUGGEST_BUFFER_MAX_SIZE=20
 
-# you-should-use (nudges you toward an existing alias after you type it out longhand)
-YSU_MESSAGE_POSITION="after"
-YSU_MODE=BESTMATCH
+# you-should-use (nudge after you type a long form that has a shorter alias)
+# BESTMATCH → prefer longest expansion (git status → gst, not g)
+export YSU_MESSAGE_POSITION="after"
+export YSU_MODE=BESTMATCH
+export YSU_IGNORED_ALIASES=(g k)   # 1-letter aliases match everything
 
+# fzf defaults (fd-backed when available)
+export FZF_DEFAULT_OPTS='--height 40% --layout=reverse --border --info=inline --bind ctrl-j:down,ctrl-k:up'
+if (( $+commands[fd] )); then
+  export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
+  export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+  export FZF_ALT_C_COMMAND='fd --type d --hidden --follow --exclude .git'
+fi
+
+# Plugin order notes:
+# - fzf-tab must load AFTER compinit (via oh-my-zsh) but BEFORE widgets that
+#   wrap the line editor (autosuggestions / syntax-highlighting).
+# - zsh-syntax-highlighting must be last overall.
 plugins=(
   git
+  kubectl
+  fzf
+  docker
   brew
   macos
   sudo
+  extract
+  copyfile
+  copypath
   colored-man-pages
   colorize
   dotenv
   python
   pip
-  autojump
-  zsh-autosuggestions
-  zsh-syntax-highlighting
-  kubectl
-  fzf
-  docker
-  extract
-  copyfile
-  copypath
   alias-finder
+  autojump
+  fzf-tab
+  zsh-autosuggestions
   you-should-use
-  fzf-tab   # must load after every other completion-touching plugin above
+  zsh-syntax-highlighting
 )
 
 source "$ZSH/oh-my-zsh.sh"
 
 # ── shell options ────────────────────────────────────────────────────────
-setopt AUTO_CD               # `foo` cds into ./foo
-setopt EXTENDED_GLOB          # advanced globbing patterns
-setopt INTERACTIVE_COMMENTS   # allow trailing `# comments` typed at the prompt
+setopt AUTO_CD
+setopt EXTENDED_GLOB
+setopt INTERACTIVE_COMMENTS
 
 HISTFILE="$HOME/.zsh_history"
 HISTSIZE=50000
 SAVEHIST=50000
-setopt EXTENDED_HISTORY        # timestamp each history entry
-setopt HIST_EXPIRE_DUPS_FIRST  # trim duplicates before anything else
-setopt HIST_IGNORE_DUPS        # skip immediate repeats
-setopt HIST_IGNORE_SPACE       # skip lines starting with a space
-setopt SHARE_HISTORY           # share history live across open sessions
+setopt EXTENDED_HISTORY
+setopt HIST_EXPIRE_DUPS_FIRST
+setopt HIST_IGNORE_DUPS
+setopt HIST_IGNORE_SPACE
+setopt SHARE_HISTORY
+setopt INC_APPEND_HISTORY
 
-# `menu no` looks backwards, but fzf-tab replaces the classic completion
-# menu with its own fzf popup — leaving `menu select` on fights it.
+# fzf-tab replaces the classic completion menu
 zstyle ':completion:*' menu no
-zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza -1 --color=always --icons $realpath 2>/dev/null'
+if (( $+commands[eza] )); then
+  zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza -1 --color=always $realpath 2>/dev/null'
+fi
+
+# alias-finder: manual lookup (you-should-use handles automatic reminders)
+# Usage: alias-finder git status
+zstyle ':omz:plugins:alias-finder' longer yes
+zstyle ':omz:plugins:alias-finder' exact yes
+
+# Word movement (Ctrl+Left / Ctrl+Right)
+bindkey '^[[1;5C' forward-word
+bindkey '^[[1;5D' backward-word
+
+# kubectl completion: cache to disk (plugin covers most; this is for full CLI).
+# Regenerating every shell start is slow; refresh weekly or after kubectl upgrades.
+if (( $+commands[kubectl] )); then
+  _kubectl_comp_cache="${XDG_CACHE_HOME:-$HOME/.cache}/kubectl_zsh_completion"
+  if [[ ! -s "$_kubectl_comp_cache" || -n "$_kubectl_comp_cache"(#qN.mh+168) ]]; then
+    mkdir -p "${_kubectl_comp_cache:h}"
+    kubectl completion zsh >|"$_kubectl_comp_cache" 2>/dev/null
+  fi
+  [[ -s "$_kubectl_comp_cache" ]] && source "$_kubectl_comp_cache"
+  unset _kubectl_comp_cache
+fi
+
+# ── editor / venv-safe prompt ────────────────────────────────────────────
+# Helix (hx) is the default terminal editor. Falls back to vim/vi.
+if (( $+commands[hx] )); then
+  export EDITOR="hx"
+elif (( $+commands[vim] )); then
+  export EDITOR="vim"
+else
+  export EDITOR="vi"
+fi
+export VISUAL="$EDITOR"
+export GIT_EDITOR="$EDITOR"
+export KUBE_EDITOR="$EDITOR"
+export SUDO_EDITOR="$EDITOR"
+
+if (( $+commands[bat] )); then
+  export MANPAGER="sh -c 'col -bx | bat -l man -p'"
+  export MANROFFOPT="-c"
+fi
+
+# Critical: set BEFORE any `source …/activate`.
+# 1) Stops venv from rewriting PS1 (Starship shows .venv on the right).
+# 2) Avoids activate's internal `deactivate` restoring a pre-Starship PS1.
+export VIRTUAL_ENV_DISABLE_PROMPT=1
 
 # ── tool integrations ────────────────────────────────────────────────────
-command -v starship >/dev/null 2>&1 && eval "$(starship init zsh)"
+# atuin takes over Ctrl+R / up-arrow history (local-only until `atuin login`).
+command -v atuin >/dev/null 2>&1 && eval "$(atuin init zsh)"
 command -v zoxide >/dev/null 2>&1 && eval "$(zoxide init zsh)"
 command -v direnv >/dev/null 2>&1 && eval "$(direnv hook zsh)"
-# Takes over up-arrow and Ctrl+R history search (local-only by default; `atuin login` opts into sync).
-command -v atuin >/dev/null 2>&1 && eval "$(atuin init zsh)"
 
-# iTerm2 shell integration (installed by the iterm module): command status
-# marks, jump-to-previous-prompt, instant replay.
+# iTerm2 shell integration (installed by the iterm module)
 [[ -f "$HOME/.iterm2_shell_integration.zsh" ]] && source "$HOME/.iterm2_shell_integration.zsh"
 
-command -v fd >/dev/null 2>&1 && export FZF_DEFAULT_COMMAND='fd --type f --hidden --exclude .git'
-[[ -n "${FZF_DEFAULT_COMMAND:-}" ]] && export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
-
-# ── modern CLI replacements ──────────────────────────────────────────────
-command -v bat >/dev/null 2>&1 && alias cat='bat'
-if command -v eza >/dev/null 2>&1; then
-  alias ls='eza --icons'
-  alias ll='eza -l --icons --git'
-  alias la='eza -la --icons --git'
-  alias lt='eza --tree --icons'
-fi
-command -v lazygit >/dev/null 2>&1 && alias lg='lazygit'
-
-# ── local snippets (~/.zsh/*.zsh, e.g. shortcut.zsh) ─────────────────────
+# ── local snippets (~/.zsh/*.zsh, e.g. shortcuts.zsh) ────────────────────
+# Source curated shortcuts + any extra drop-ins. Prefer plural name.
+[[ -f "$HOME/.zsh/shortcuts.zsh" ]] && source "$HOME/.zsh/shortcuts.zsh"
+[[ -f "$HOME/.zsh/shortcut.zsh" && ! -f "$HOME/.zsh/shortcuts.zsh" ]] && source "$HOME/.zsh/shortcut.zsh"
 for _zsh_snippet in "$HOME"/.zsh/*.zsh(N); do
-  source "$_zsh_snippet"
+  case "$_zsh_snippet" in
+    */shortcuts.zsh|*/shortcut.zsh) continue ;;  # already sourced above
+    *) source "$_zsh_snippet" ;;
+  esac
 done
 unset _zsh_snippet
 
 # ── secrets (never committed — see zsh/zshrc.secrets.template) ──────────
 [[ -f "$HOME/.zshrc.secrets" ]] && source "$HOME/.zshrc.secrets"
+
+# ── Starship last so it owns the prompt ──────────────────────────────────
+if command -v starship >/dev/null 2>&1; then
+  eval "$(starship init zsh)"
+  # Drop any pre-Starship saved PS1 so a later venv activate cannot restore it.
+  unset _OLD_VIRTUAL_PS1
+fi
+
+# Optional global venv AFTER Starship (prompt-safe with VIRTUAL_ENV_DISABLE_PROMPT).
+# Prefer project .venv via direnv; uncomment if you still want a default env:
+# [[ -f "$HOME/.venv/bin/activate" ]] && source "$HOME/.venv/bin/activate" >/dev/null 2>&1
+
+if [[ -o interactive ]]; then
+  print -P "%F{8}tip:%f sc %F{8}(or%f shortcuts%f%F{8}) — browse aliases · you-should-use reminds when a shorter one exists · sc --live for all OMZ aliases%f"
+fi

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# zsh module: oh-my-zsh + plugins, starship prompt, modern CLI tools, shortcut.zsh
+# zsh module: oh-my-zsh + plugins, starship prompt, modern CLI tools, shortcuts.zsh
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=lib.sh
@@ -20,6 +20,7 @@ ZSH_CUSTOM="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
 
 echo "Installing custom zsh plugins (not bundled with oh-my-zsh core)"
 # Plain indexed arrays on purpose: macOS ships bash 3.2, which has no associative arrays.
+# Order of install does not matter; load order is controlled in zsh/zshrc.
 plugin_names=(zsh-autosuggestions zsh-syntax-highlighting you-should-use fzf-tab)
 plugin_urls=(
   "https://github.com/zsh-users/zsh-autosuggestions"
@@ -33,8 +34,12 @@ done
 
 echo "Linking zsh config"
 link_file "$SCRIPT_DIR/zsh/zshrc" "$HOME/.zshrc"
+link_file "$SCRIPT_DIR/zsh/shortcuts.zsh" "$HOME/.zsh/shortcuts.zsh"
+# Keep singular name as a thin redirect for older docs / muscle memory
 link_file "$SCRIPT_DIR/zsh/shortcut.zsh" "$HOME/.zsh/shortcut.zsh"
 link_file "$SCRIPT_DIR/starship.toml" "$HOME/.config/starship.toml"
+link_file "$SCRIPT_DIR/helix/config.toml" "$HOME/.config/helix/config.toml"
+link_file "$SCRIPT_DIR/tmux/tmux.conf" "$HOME/.tmux.conf"
 
 echo "Setting up ~/.zshrc.secrets (long-lived secrets — sourced from .zshrc, never committed)"
 copy_if_missing "$SCRIPT_DIR/zsh/zshrc.secrets.template" "$HOME/.zshrc.secrets"
@@ -43,4 +48,7 @@ chmod 600 "$HOME/.zshrc.secrets"
 echo ""
 echo "zsh module done. Remaining manual steps:"
 echo "  - restart your shell (or run 'exec zsh') to pick everything up"
-echo "  - if you also run the 'iterm' module, set its font to a Nerd Font so prompt icons render"
+echo "  - fill in ~/.zshrc.secrets with tokens / optional hostnames"
+echo "  - editor: hx (Helix) is EDITOR/VISUAL — try: hx --tutor | e . | ef"
+echo "  - optional: atuin login   # sync history across machines (works local-only without this)"
+echo "  - if you also run the 'iterm' module, set its font to a Nerd Font if you re-enable icons"

@@ -1,68 +1,112 @@
-"$schema" = 'https://starship.rs/config-schema.json'
+# Starship — calm left / right layout (no emoji icons)
+# Docs: https://starship.rs/config/
+# Edit: starconfig   |  Reload: exec zsh
+# Optional: install a Nerd Font via the iterm module if you re-enable symbol glyphs.
 
-# Requires a Nerd Font in your terminal profile (the `iterm` module installs Hack Nerd Font).
+"$schema" = "https://starship.rs/config-schema.json"
 
-add_newline = true
-
+# Left: path + git. Right: env context. Prompt char on its own line.
 format = """
-$directory\
-$git_branch\
-$git_status\
-$kubernetes\
-$docker_context\
-$python\
-$direnv\
-$cmd_duration
+$username$hostname$directory$git_branch$git_status
 $character"""
 
+right_format = """$python$kubernetes$docker_context$direnv$cmd_duration"""
+
+add_newline = true
+command_timeout = 1000
+
 [character]
-success_symbol = "[➜](bold green)"
-error_symbol = "[➜](bold red)"
+success_symbol = "[>](bold green)"
+error_symbol = "[>](bold red)"
+vicmd_symbol = "[<](bold yellow)"
 
 [directory]
 truncation_length = 3
 truncate_to_repo = true
 style = "bold cyan"
+read_only = " ro"
+format = "[$path]($style)[$read_only]($read_only_style) "
 
 [git_branch]
-symbol = " "
+symbol = ""
 style = "bold purple"
-format = "on [$symbol$branch]($style) "
+truncation_length = 24
+# e.g. myrepo (main)
+format = "[($branch)]($style) "
 
 [git_status]
-style = "bold red"
-format = "([$all_status$ahead_behind]($style)) "
+# Only shows when the repo is dirty / diverged. Counts help:
+#   !N  modified   ?N  untracked   +N  staged   ⇡N ahead   ⇣N behind
+style = "bold yellow"
+format = '([$all_status$ahead_behind]($style) )'
+conflicted = "=confl "
+ahead = "⇡${count} "
+behind = "⇣${count} "
+diverged = "diverged "
+untracked = "?${count} "
+stashed = ""
+modified = "!${count} "
+staged = "+${count} "
+renamed = "ren${count} "
+deleted = "del${count} "
 
-# Off by default in starship — on here since this setup revolves around kubectl/k9s/kubectx.
 [kubernetes]
 disabled = false
-symbol = "☸ "
-style = "bold blue"
-format = "on [$symbol$context]($style) "
+format = '[$context(:$namespace)]($style)'
+style = "dimmed blue"
 
 [docker_context]
-symbol = " "
-format = "via [$symbol$context]($style) "
+format = '[$context]($style) '
+style = "dimmed cyan"
+only_with_files = false
 
 [python]
-symbol = " "
-style = "bold yellow"
-format = "via [$symbol$version(\\($virtualenv\\))]($style) "
+# Venv name only (no version, no icons); hidden when no venv
+symbol = ""
+format = '([${virtualenv}]($style) )'
+style = "dimmed yellow"
+detect_extensions = ["py", "ipynb"]
+detect_files = ["requirements.txt", "pyproject.toml", "Pipfile", ".python-version"]
+detect_folders = []
 
-# Off by default in starship — on here since direnv is part of this setup.
 [direnv]
 disabled = false
-format = "[$symbol$loaded/$allowed]($style) "
+format = '[$symbol$loaded]($style) '
+style = "dimmed green"
+symbol = "direnv "
+
+[golang]
+disabled = true
+
+[nodejs]
+disabled = true
 
 [cmd_duration]
-min_time = 2_000
-format = "took [$duration]($style) "
-style = "bold yellow"
+min_time = 2000
+format = "[$duration](dimmed yellow) "
+show_milliseconds = false
 
-# Enabled by default in starship but not part of this setup's toolchain — silenced to cut noise.
+[username]
+show_always = false
+format = "[$user]($style) "
+style_user = "dimmed white"
+
+[hostname]
+ssh_only = true
+format = "@[$hostname](bold red) "
+disabled = false
+
+[package]
+disabled = true
+
 [aws]
 disabled = true
+
 [gcloud]
 disabled = true
-[package]
+
+[time]
+disabled = true
+
+[battery]
 disabled = true

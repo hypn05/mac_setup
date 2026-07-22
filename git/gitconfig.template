@@ -12,7 +12,7 @@
 	autoSetupRemote = true
 
 [core]
-	editor = vim
+	editor = hx
 	excludesfile = ~/.gitignore_global
 	pager = delta
 
@@ -21,6 +21,7 @@
 
 [delta]
 	navigate = true
+	side-by-side = true
 	line-numbers = true
 
 [merge]
