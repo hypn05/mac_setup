@@ -1,0 +1,2 @@
+# Brewfile.docker — run via: ./install.sh docker
+cask "docker"   # Docker Desktop — Docker Engine, CLI, and Compose v2 plugin

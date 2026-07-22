@@ -1,0 +1,5 @@
+# Brewfile.git — run via: ./install.sh git
+brew "git"                # version control
+brew "gh"                  # GitHub CLI
+brew "git-delta"           # better diff/log pager, wired into git/gitconfig.template
+brew "lazygit"              # terminal UI for git

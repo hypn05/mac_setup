@@ -1,0 +1,3 @@
+# Brewfile.iterm — run via: ./install.sh iterm
+cask "iterm2"                  # terminal replacement
+cask "font-hack-nerd-font"      # glyphs used by the starship prompt icons

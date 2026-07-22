@@ -1,0 +1,68 @@
+"$schema" = 'https://starship.rs/config-schema.json'
+
+# Requires a Nerd Font in your terminal profile (the `iterm` module installs Hack Nerd Font).
+
+add_newline = true
+
+format = """
+$directory\
+$git_branch\
+$git_status\
+$kubernetes\
+$docker_context\
+$python\
+$direnv\
+$cmd_duration
+$character"""
+
+[character]
+success_symbol = "[➜](bold green)"
+error_symbol = "[➜](bold red)"
+
+[directory]
+truncation_length = 3
+truncate_to_repo = true
+style = "bold cyan"
+
+[git_branch]
+symbol = " "
+style = "bold purple"
+format = "on [$symbol$branch]($style) "
+
+[git_status]
+style = "bold red"
+format = "([$all_status$ahead_behind]($style)) "
+
+# Off by default in starship — on here since this setup revolves around kubectl/k9s/kubectx.
+[kubernetes]
+disabled = false
+symbol = "☸ "
+style = "bold blue"
+format = "on [$symbol$context]($style) "
+
+[docker_context]
+symbol = " "
+format = "via [$symbol$context]($style) "
+
+[python]
+symbol = " "
+style = "bold yellow"
+format = "via [$symbol$version(\\($virtualenv\\))]($style) "
+
+# Off by default in starship — on here since direnv is part of this setup.
+[direnv]
+disabled = false
+format = "[$symbol$loaded/$allowed]($style) "
+
+[cmd_duration]
+min_time = 2_000
+format = "took [$duration]($style) "
+style = "bold yellow"
+
+# Enabled by default in starship but not part of this setup's toolchain — silenced to cut noise.
+[aws]
+disabled = true
+[gcloud]
+disabled = true
+[package]
+disabled = true

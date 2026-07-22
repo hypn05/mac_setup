@@ -1,0 +1,5 @@
+# Brewfile.k8s — run via: ./install.sh k8s
+brew "kubernetes-cli"   # kubectl
+brew "kubectx"           # kubectx / kubens — fast context & namespace switching
+brew "k9s"                # terminal UI for kubernetes
+brew "stern"               # tail logs from multiple pods/containers at once by label or regex
