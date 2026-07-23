@@ -2,6 +2,17 @@
 # Shared helpers, sourced by modules/*.sh. Not meant to be run directly.
 # Every helper here checks current state before acting, so modules are safe to re-run.
 
+# By default `brew install`/`brew bundle` first re-checks (and sometimes
+# re-downloads multi-MB JSON indexes for) Homebrew's formula/cask catalog.
+# That's fine for a single one-off install, but this repo's whole point is
+# running several modules back-to-back, and re-fetching the same catalog
+# for every single one is most of what made setup feel slow. Skip it here;
+# run a plain `brew update` yourself occasionally to pick up new formula
+# versions outside of this script.
+export HOMEBREW_NO_AUTO_UPDATE=1
+export HOMEBREW_NO_INSTALL_CLEANUP=1
+export HOMEBREW_NO_ENV_HINTS=1
+
 ensure_homebrew() {
   if command -v brew >/dev/null 2>&1; then
     echo "Homebrew already installed."
