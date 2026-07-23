@@ -22,9 +22,6 @@ brew "tlrc"        # tldr client (simplified man pages)
 # Data munging
 brew "yq"   # YAML/JSON/XML processor (the jq of YAML)
 
-# Terminal editor + markdown
-brew "helix"  # modal editor with LSP/tree-sitter (binary: hx) — default EDITOR
-brew "glow"   # render markdown in the terminal
-
-# Multiplexer
-brew "tmux"   # sessions/windows/panes — config: tmux/tmux.conf, help: thelp / sc tmux
+# Helix/glow/tmux live in Brewfile.editor (./install.sh editor) so the shell
+# setup doesn't force an editor/multiplexer opinion on you. zshrc and
+# shortcuts.zsh both auto-detect their presence either way.

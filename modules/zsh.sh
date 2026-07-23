@@ -32,14 +32,18 @@ for i in "${!plugin_names[@]}"; do
   clone_if_missing "${plugin_urls[$i]}" "$ZSH_CUSTOM/plugins/${plugin_names[$i]}"
 done
 
+# Stale symlink cleanup: earlier versions also linked ~/.zsh/shortcut.zsh
+# (singular) as a back-compat redirect. shortcuts.zsh (plural) is now the
+# only source of truth — remove the old link if a prior run created it.
+if [[ -L "$HOME/.zsh/shortcut.zsh" ]]; then
+  echo "Removing stale ~/.zsh/shortcut.zsh symlink (superseded by shortcuts.zsh)"
+  rm "$HOME/.zsh/shortcut.zsh"
+fi
+
 echo "Linking zsh config"
 link_file "$SCRIPT_DIR/zsh/zshrc" "$HOME/.zshrc"
 link_file "$SCRIPT_DIR/zsh/shortcuts.zsh" "$HOME/.zsh/shortcuts.zsh"
-# Keep singular name as a thin redirect for older docs / muscle memory
-link_file "$SCRIPT_DIR/zsh/shortcut.zsh" "$HOME/.zsh/shortcut.zsh"
 link_file "$SCRIPT_DIR/starship.toml" "$HOME/.config/starship.toml"
-link_file "$SCRIPT_DIR/helix/config.toml" "$HOME/.config/helix/config.toml"
-link_file "$SCRIPT_DIR/tmux/tmux.conf" "$HOME/.tmux.conf"
 
 echo "Setting up ~/.zshrc.secrets (long-lived secrets — sourced from .zshrc, never committed)"
 copy_if_missing "$SCRIPT_DIR/zsh/zshrc.secrets.template" "$HOME/.zshrc.secrets"
@@ -48,7 +52,6 @@ chmod 600 "$HOME/.zshrc.secrets"
 echo ""
 echo "zsh module done. Remaining manual steps:"
 echo "  - restart your shell (or run 'exec zsh') to pick everything up"
-echo "  - fill in ~/.zshrc.secrets with tokens / optional hostnames"
-echo "  - editor: hx (Helix) is EDITOR/VISUAL — try: hx --tutor | e . | ef"
+echo "  - fill in ~/.zshrc.secrets with tokens"
+echo "  - run the 'editor' module for Helix/tmux (EDITOR falls back to vim/vi without it)"
 echo "  - optional: atuin login   # sync history across machines (works local-only without this)"
-echo "  - if you also run the 'iterm' module, set its font to a Nerd Font if you re-enable icons"

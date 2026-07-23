@@ -1,0 +1,4 @@
+# Brewfile.editor — run via: ./install.sh editor
+brew "helix"   # modal editor with LSP/tree-sitter (binary: hx)
+brew "glow"     # render markdown in the terminal
+brew "tmux"      # terminal multiplexer — config: tmux/tmux.conf

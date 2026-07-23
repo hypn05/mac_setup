@@ -5,3 +5,6 @@
 .vscode/
 .idea/
 *.swp
+
+# direnv — .envrc is machine/project-local (see .envrc.example)
+.envrc

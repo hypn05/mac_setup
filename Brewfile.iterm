@@ -1,3 +1,7 @@
 # Brewfile.iterm — run via: ./install.sh iterm
-cask "iterm2"                  # terminal replacement
-cask "font-hack-nerd-font"      # glyphs used by the starship prompt icons
+cask "iterm2"   # terminal replacement
+
+# starship.toml ships with no icons/glyphs by default, so a Nerd Font isn't
+# installed here. If you add icons back to starship.toml, install one with:
+#   brew install --cask font-hack-nerd-font
+# then set it in iTerm2: Preferences -> Profiles -> Text -> Font.

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# iterm module: iTerm2 + Nerd Font (for prompt icons)
+# iterm module: iTerm2 + shell integration (Nerd Font is opt-in, see Brewfile.iterm)
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=lib.sh
@@ -16,9 +16,10 @@ else
 fi
 
 echo ""
-echo "iterm module done. Remaining manual step:"
-echo "  - in iTerm2: Preferences -> Profiles -> Text -> Font, set it to 'Hack Nerd Font'"
-echo "    so prompt icons (from the 'zsh' module's starship config) render correctly"
+echo "iterm module done. Remaining manual steps:"
 echo "  - shell integration (command status marks, jump-to-prompt) is picked up"
 echo "    automatically by the 'zsh' module's ~/.zshrc; if you're not using that"
 echo "    module, source ~/.iterm2_shell_integration.zsh from your own .zshrc"
+echo "  - starship.toml ships icon-free by default. If you re-enable icons, run"
+echo "    'brew install --cask font-hack-nerd-font' and set it under iTerm2:"
+echo "    Preferences -> Profiles -> Text -> Font"

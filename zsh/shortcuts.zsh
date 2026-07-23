@@ -630,6 +630,23 @@ _sc_live() {
   fi
 }
 
+_sc_doctor_repo_root() {
+  local target
+  target="$(readlink "$HOME/.zsh/shortcuts.zsh" 2>/dev/null)" || return 1
+  [[ -n "$target" ]] || return 1
+  print -r -- "${target:h:h}"
+}
+
+_sc_doctor() {
+  local root
+  root="$(_sc_doctor_repo_root)"
+  if [[ -z "$root" || ! -x "$root/install.sh" ]]; then
+    print -u2 "sc doctor: can't find the mac_setup repo (~/.zsh/shortcuts.zsh isn't a symlink into it)"
+    return 1
+  fi
+  "$root/install.sh" doctor
+}
+
 _sc_help() {
   cat <<'EOF'
 shortcuts / sc — discover shell shortcuts
@@ -639,6 +656,7 @@ shortcuts / sc — discover shell shortcuts
   sc <query>             Filter curated by name / category / description
   sc git | sc k8s | sc docker | sc keys | sc editor | sc tmux
   sc --live [term]       All currently loaded aliases (OMZ + yours)
+  sc doctor              Read-only health check across every install module
   sc --help              This help
 
 Categories: git  k8s  docker  files  search  util  keys  editor  tmux
@@ -671,6 +689,7 @@ shortcuts() {
       -h|--help) _sc_help; return 0 ;;
       -l|--list|--all) mode="list"; shift ;;
       --live) shift; _sc_live "$@"; return $? ;;
+      doctor) shift; _sc_doctor "$@"; return $? ;;
       *) query="$1"; shift; break ;;
     esac
   done

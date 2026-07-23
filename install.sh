@@ -15,17 +15,21 @@ usage() {
 Usage: ./install.sh <module> [module ...]
 
 Modules (mix and match — nothing here depends on another module):
-  git      git, gh, git-delta, lazygit, and ~/.gitconfig
+  git      git, gh (+ aliases), git-delta, lazygit, and ~/.gitconfig
   docker   Docker Desktop (Engine, CLI, Compose v2)
   k8s      kubectl, kubectx/kubens, k9s, stern
-  zsh      oh-my-zsh + plugins, starship, modern CLI tools, ~/.zsh/shortcuts.zsh
-  iterm    iTerm2 + Nerd Font
-  all      every module above
+  zsh      oh-my-zsh + plugins, starship, atuin, modern CLI tools, ~/.zsh/shortcuts.zsh
+  editor   Helix, glow, tmux (+ their configs) — optional, not pulled in by zsh
+  iterm    iTerm2 + shell integration (Nerd Font is opt-in, see Brewfile.iterm)
+  all      every installable module above (git docker k8s zsh editor iterm)
+
+  doctor   read-only health check across every module — installs nothing
 
 Examples:
   ./install.sh zsh
   ./install.sh git zsh
   ./install.sh all
+  ./install.sh doctor
 
 Every module is safe to re-run: each checks what's already installed before acting.
 EOF
@@ -45,9 +49,9 @@ for arg in "$@"; do
       exit 0
       ;;
     all)
-      modules=(git docker k8s zsh iterm)
+      modules=(git docker k8s zsh editor iterm)
       ;;
-    git|docker|k8s|zsh|iterm)
+    git|docker|k8s|zsh|editor|iterm|doctor)
       modules+=("$arg")
       ;;
     *)

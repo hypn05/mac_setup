@@ -1,0 +1,12 @@
+# Example .envrc — per-project env vars loaded automatically by direnv
+# (installed by the zsh module) when you cd into this directory.
+#
+# Usage: cp .envrc.example .envrc, edit it, then run `direnv allow`.
+# .envrc itself is gitignored — same "never commit secrets" pattern as
+# ~/.zshrc.secrets, just scoped to one project instead of the whole machine.
+
+# export DATABASE_URL="postgres://localhost/dev"
+# export API_KEY="..."
+
+# Layer in a project-local Python venv, if this project has one:
+# layout python3

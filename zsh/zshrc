@@ -136,14 +136,10 @@ command -v direnv >/dev/null 2>&1 && eval "$(direnv hook zsh)"
 [[ -f "$HOME/.iterm2_shell_integration.zsh" ]] && source "$HOME/.iterm2_shell_integration.zsh"
 
 # ── local snippets (~/.zsh/*.zsh, e.g. shortcuts.zsh) ────────────────────
-# Source curated shortcuts + any extra drop-ins. Prefer plural name.
 [[ -f "$HOME/.zsh/shortcuts.zsh" ]] && source "$HOME/.zsh/shortcuts.zsh"
-[[ -f "$HOME/.zsh/shortcut.zsh" && ! -f "$HOME/.zsh/shortcuts.zsh" ]] && source "$HOME/.zsh/shortcut.zsh"
 for _zsh_snippet in "$HOME"/.zsh/*.zsh(N); do
-  case "$_zsh_snippet" in
-    */shortcuts.zsh|*/shortcut.zsh) continue ;;  # already sourced above
-    *) source "$_zsh_snippet" ;;
-  esac
+  [[ "$_zsh_snippet" == */shortcuts.zsh ]] && continue  # already sourced above
+  source "$_zsh_snippet"
 done
 unset _zsh_snippet
 
