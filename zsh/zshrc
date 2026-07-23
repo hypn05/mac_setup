@@ -132,6 +132,13 @@ command -v atuin >/dev/null 2>&1 && eval "$(atuin init zsh)"
 command -v zoxide >/dev/null 2>&1 && eval "$(zoxide init zsh)"
 command -v direnv >/dev/null 2>&1 && eval "$(direnv hook zsh)"
 
+# nvm (Node Version Manager) — installed via `brew install nvm`, not part of
+# any module here. NVM_DIR is where nvm keeps installed Node versions;
+# nvm.sh itself ships in Homebrew's nvm keg, not in NVM_DIR.
+export NVM_DIR="$HOME/.nvm"
+[[ -s "/opt/homebrew/opt/nvm/nvm.sh" ]] && source "/opt/homebrew/opt/nvm/nvm.sh"
+[[ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ]] && source "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"
+
 # iTerm2 shell integration (installed by the iterm module)
 [[ -f "$HOME/.iterm2_shell_integration.zsh" ]] && source "$HOME/.iterm2_shell_integration.zsh"
 
