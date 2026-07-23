@@ -1,2 +1,4 @@
 # Brewfile.docker — run via: ./install.sh docker
-cask "docker"   # Docker Desktop — Docker Engine, CLI, and Compose v2 plugin
+# Canonical cask name is "docker-desktop" ("docker" is an alias homebrew-cask
+# kept for the rename — using the real name avoids relying on that alias).
+cask "docker-desktop"   # Docker Desktop — Docker Engine, CLI, and Compose v2 plugin

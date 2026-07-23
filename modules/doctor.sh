@@ -12,22 +12,37 @@ fail=0
 section() { echo ""; echo "== $1 =="; }
 
 # Reads a Brewfile's `brew "x"` / `cask "x"` lines and checks each is installed.
+#
+# Checks `brew list --<kind> <name>` per item rather than grepping the full
+# `brew list` output — the latter breaks silently when a cask is renamed
+# upstream (e.g. "docker" -> "docker-desktop": still installable and listed
+# under the old name via brew's alias, but absent from the plain listing).
+#
+# For formulas specifically, also falls back to `command -v`: things like
+# git ship with Xcode Command Line Tools and work fine without ever being
+# a Homebrew formula, so brew's install DB alone isn't the right question —
+# "is this tool available" is.
 check_brewfile() {
   local brewfile="$1" kind name
   [[ -f "$brewfile" ]] || { echo "  [skip]    $(basename "$brewfile") not found"; return; }
-  while IFS= read -r line; do
+  # Read the Brewfile on fd 3, not stdin: `brew list` runs inside this loop,
+  # and if anything it invokes ever reads stdin, sharing fd 0 with the loop's
+  # own file input would silently eat lines and skip entries further down.
+  while IFS= read -r line <&3; do
     case "$line" in
       brew\ \"*) kind=formula; name="${line#brew \"}"; name="${name%%\"*}" ;;
       cask\ \"*) kind=cask; name="${line#cask \"}"; name="${name%%\"*}" ;;
       *) continue ;;
     esac
-    if brew list "--$kind" 2>/dev/null | grep -qx "$name"; then
+    if brew list "--$kind" "$name" >/dev/null 2>&1; then
       echo "  [ok]      $name"
+    elif [[ "$kind" == "formula" ]] && command -v "$name" >/dev/null 2>&1; then
+      echo "  [ok]      $name (on PATH, not via Homebrew)"
     else
       echo "  [missing] $name  (brew bundle --file=$(basename "$brewfile"))"
       fail=1
     fi
-  done < "$brewfile"
+  done 3< "$brewfile"
 }
 
 # Confirms dest is a symlink pointing at exactly $want.
