@@ -8,6 +8,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$SCRIPT_DIR/modules/lib.sh"
 
 fail=0
+OS="$(detect_os)"
 
 section() { echo ""; echo "== $1 =="; }
 
@@ -34,7 +35,11 @@ check_brewfile() {
       cask\ \"*) kind=cask; name="${line#cask \"}"; name="${name%%\"*}" ;;
       *) continue ;;
     esac
-    if brew list "--$kind" "$name" >/dev/null 2>&1; then
+    if [[ "$kind" == "cask" && "$OS" != "macos" ]]; then
+      echo "  [skip]    $name (cask — macOS only)"
+      continue
+    fi
+    if command -v brew >/dev/null 2>&1 && brew list "--$kind" "$name" >/dev/null 2>&1; then
       echo "  [ok]      $name"
     elif [[ "$kind" == "formula" ]] && command -v "$name" >/dev/null 2>&1; then
       echo "  [ok]      $name (on PATH, not via Homebrew)"
@@ -69,9 +74,25 @@ check_exists() {
   fi
 }
 
+check_cmd() {
+  local name="$1"
+  if command -v "$name" >/dev/null 2>&1; then
+    echo "  [ok]      $name"
+  else
+    echo "  [missing] $name"
+    fail=1
+  fi
+}
+
+echo "doctor — detected OS: $OS"
+
 if ! command -v brew >/dev/null 2>&1; then
-  echo "Homebrew isn't installed — nothing else can be verified."
-  exit 1
+  _brew_shellenv 2>/dev/null || true
+fi
+
+if ! command -v brew >/dev/null 2>&1; then
+  echo "Homebrew isn't on PATH — formula checks will fall back to command -v only."
+  echo "  On Linux/WSL: eval \"\$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)\""
 fi
 
 section "git"
@@ -87,7 +108,47 @@ if command -v gh >/dev/null 2>&1; then
 fi
 
 section "docker"
-check_brewfile "$SCRIPT_DIR/Brewfile.docker"
+case "$OS" in
+  macos)
+    check_brewfile "$SCRIPT_DIR/Brewfile.docker"
+    ;;
+  wsl)
+    if command -v docker >/dev/null 2>&1; then
+      echo "  [ok]      docker CLI"
+      if docker info >/dev/null 2>&1; then
+        echo "  [ok]      docker daemon reachable"
+      else
+        echo "  [warn]    docker CLI present but daemon not reachable"
+        echo "            Prefer Docker Desktop on Windows with WSL integration enabled."
+        fail=1
+      fi
+    else
+      echo "  [missing] docker"
+      echo "            Install Docker Desktop on Windows and enable WSL integration,"
+      echo "            or re-run: ./install.sh docker"
+      fail=1
+    fi
+    if docker compose version >/dev/null 2>&1; then
+      echo "  [ok]      docker compose"
+    else
+      echo "  [missing] docker compose"
+      fail=1
+    fi
+    ;;
+  linux)
+    check_cmd docker
+    if docker compose version >/dev/null 2>&1; then
+      echo "  [ok]      docker compose"
+    else
+      echo "  [missing] docker compose"
+      fail=1
+    fi
+    if command -v docker >/dev/null 2>&1 && ! docker info >/dev/null 2>&1; then
+      echo "  [warn]    docker needs a running daemon (and usually membership in the docker group)"
+      fail=1
+    fi
+    ;;
+esac
 
 section "k8s"
 check_brewfile "$SCRIPT_DIR/Brewfile.k8s"
@@ -103,17 +164,31 @@ check_link "$HOME/.zshrc" "$SCRIPT_DIR/zsh/zshrc"
 check_link "$HOME/.zsh/shortcuts.zsh" "$SCRIPT_DIR/zsh/shortcuts.zsh"
 check_link "$HOME/.config/starship.toml" "$SCRIPT_DIR/starship.toml"
 if [[ -e "$HOME/.zshrc.secrets" ]]; then
-  perm=$(stat -f '%Lp' "$HOME/.zshrc.secrets" 2>/dev/null)
+  perm="$(file_mode "$HOME/.zshrc.secrets")"
   if [[ "$perm" == "600" ]]; then
     echo "  [ok]      ~/.zshrc.secrets (chmod 600)"
   else
-    echo "  [warn]    ~/.zshrc.secrets exists but permissions are $perm, expected 600"
+    echo "  [warn]    ~/.zshrc.secrets exists but permissions are ${perm:-unknown}, expected 600"
     fail=1
   fi
-  set_vars=$(grep -cE '^export [A-Z_]+=.+' "$HOME/.zshrc.secrets" 2>/dev/null)
+  set_vars=$(grep -cE '^export [A-Z_]+=.+' "$HOME/.zshrc.secrets" 2>/dev/null || true)
   echo "  [info]    $set_vars optional var(s) set in ~/.zshrc.secrets"
 else
   echo "  [missing] ~/.zshrc.secrets"
+  fail=1
+fi
+
+# Clipboard parity: pbcopy/pbpaste must exist everywhere (native or shim).
+if command -v pbcopy >/dev/null 2>&1; then
+  echo "  [ok]      pbcopy ($(command -v pbcopy))"
+else
+  echo "  [missing] pbcopy (re-run: ./install.sh zsh — installs Linux/WSL shim)"
+  fail=1
+fi
+if command -v pbpaste >/dev/null 2>&1; then
+  echo "  [ok]      pbpaste ($(command -v pbpaste))"
+else
+  echo "  [missing] pbpaste (re-run: ./install.sh zsh — installs Linux/WSL shim)"
   fail=1
 fi
 
@@ -121,10 +196,42 @@ section "editor"
 check_brewfile "$SCRIPT_DIR/Brewfile.editor"
 check_link "$HOME/.config/helix/config.toml" "$SCRIPT_DIR/helix/config.toml"
 check_link "$HOME/.tmux.conf" "$SCRIPT_DIR/tmux/tmux.conf"
+check_link "$HOME/.local/bin/tmux-copy" "$SCRIPT_DIR/bin/tmux-copy"
 
-section "iterm"
-check_brewfile "$SCRIPT_DIR/Brewfile.iterm"
-check_exists "$HOME/.iterm2_shell_integration.zsh"
+section "wezterm"
+if [[ -L "$HOME/.wezterm.lua" || -f "$HOME/.wezterm.lua" ]]; then
+  if [[ -L "$HOME/.wezterm.lua" ]]; then
+    check_link "$HOME/.wezterm.lua" "$SCRIPT_DIR/wezterm/wezterm.lua"
+  else
+    echo "  [ok]      ~/.wezterm.lua (file present)"
+  fi
+else
+  if [[ "$OS" == "macos" ]]; then
+    echo "  [info]    ~/.wezterm.lua not linked (optional on macOS — iTerm is fine)"
+  else
+    echo "  [missing] ~/.wezterm.lua (re-run: ./install.sh wezterm for Cmd/Super+C/V parity)"
+    fail=1
+  fi
+fi
+if command -v wezterm >/dev/null 2>&1 || command -v wezterm.exe >/dev/null 2>&1; then
+  echo "  [ok]      wezterm binary on PATH"
+else
+  if [[ "$OS" == "macos" ]]; then
+    echo "  [info]    wezterm not installed (optional — use iterm or ./install.sh wezterm)"
+  else
+    echo "  [warn]    wezterm binary not on PATH (install via ./install.sh wezterm)"
+    fail=1
+  fi
+fi
+
+if [[ "$OS" == "macos" ]]; then
+  section "iterm"
+  check_brewfile "$SCRIPT_DIR/Brewfile.iterm"
+  check_exists "$HOME/.iterm2_shell_integration.zsh"
+else
+  section "iterm"
+  echo "  [skip]    iterm is macOS-only — use wezterm for Cmd/Super+C/V parity"
+fi
 
 echo ""
 if [[ "$fail" -eq 0 ]]; then

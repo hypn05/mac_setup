@@ -30,17 +30,24 @@ if (( $+commands[fd] )); then
   export FZF_ALT_C_COMMAND='fd --type d --hidden --follow --exclude .git'
 fi
 
+# Linuxbrew / user installs often land here; needed for tmux-copy etc.
+[[ -d "$HOME/.local/bin" ]] && path=("$HOME/.local/bin" $path)
+# Homebrew shellenv if brew isn't on PATH yet (e.g. before ~/.zprofile runs).
+if ! (( $+commands[brew] )); then
+  [[ -x /home/linuxbrew/.linuxbrew/bin/brew ]] && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+  [[ -x /opt/homebrew/bin/brew ]] && eval "$(/opt/homebrew/bin/brew shellenv)"
+fi
+
 # Plugin order notes:
 # - fzf-tab must load AFTER compinit (via oh-my-zsh) but BEFORE widgets that
 #   wrap the line editor (autosuggestions / syntax-highlighting).
 # - zsh-syntax-highlighting must be last overall.
+# - brew / macos are OS-conditional so the same zshrc works on Linux/WSL.
 plugins=(
   git
   kubectl
   fzf
   docker
-  brew
-  macos
   sudo
   extract
   copyfile
@@ -52,6 +59,10 @@ plugins=(
   pip
   alias-finder
   autojump
+)
+(( $+commands[brew] )) && plugins+=(brew)
+[[ "$(uname -s)" == "Darwin" ]] && plugins+=(macos)
+plugins+=(
   fzf-tab
   zsh-autosuggestions
   you-should-use
@@ -136,8 +147,14 @@ command -v direnv >/dev/null 2>&1 && eval "$(direnv hook zsh)"
 # any module here. NVM_DIR is where nvm keeps installed Node versions;
 # nvm.sh itself ships in Homebrew's nvm keg, not in NVM_DIR.
 export NVM_DIR="$HOME/.nvm"
-[[ -s "/opt/homebrew/opt/nvm/nvm.sh" ]] && source "/opt/homebrew/opt/nvm/nvm.sh"
-[[ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ]] && source "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"
+if (( $+commands[brew] )); then
+  _nvm_prefix="$(brew --prefix nvm 2>/dev/null)"
+  if [[ -n "$_nvm_prefix" ]]; then
+    [[ -s "$_nvm_prefix/nvm.sh" ]] && source "$_nvm_prefix/nvm.sh"
+    [[ -s "$_nvm_prefix/etc/bash_completion.d/nvm" ]] && source "$_nvm_prefix/etc/bash_completion.d/nvm"
+  fi
+  unset _nvm_prefix
+fi
 
 # iTerm2 shell integration (installed by the iterm module)
 [[ -f "$HOME/.iterm2_shell_integration.zsh" ]] && source "$HOME/.iterm2_shell_integration.zsh"

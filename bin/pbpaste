@@ -1,0 +1,14 @@
+#!/usr/bin/env sh
+# macOS-compatible clipboard paste: system clipboard → stdout.
+# Linked to ~/.local/bin/pbpaste on Linux/WSL when native pbpaste is absent.
+if command -v wl-paste >/dev/null 2>&1; then
+  exec wl-paste
+elif command -v xclip >/dev/null 2>&1; then
+  exec xclip -selection clipboard -o
+elif command -v powershell.exe >/dev/null 2>&1; then
+  # WSL: read the Windows clipboard
+  exec powershell.exe -NoProfile -Command Get-Clipboard
+else
+  echo "pbpaste: no clipboard backend (install wl-clipboard or xclip)" >&2
+  exit 1
+fi

@@ -13,17 +13,85 @@ export HOMEBREW_NO_AUTO_UPDATE=1
 export HOMEBREW_NO_INSTALL_CLEANUP=1
 export HOMEBREW_NO_ENV_HINTS=1
 
+# Detect the host OS for module filtering and install branches.
+# Prints: macos | linux | wsl
+# bash 3.2-safe (no associative arrays).
+detect_os() {
+  local uname_s
+  uname_s="$(uname -s)"
+  case "$uname_s" in
+    Darwin)
+      echo "macos"
+      ;;
+    Linux)
+      if grep -qiE '(microsoft|wsl)' /proc/version 2>/dev/null; then
+        echo "wsl"
+      else
+        echo "linux"
+      fi
+      ;;
+    *)
+      echo "unsupported"
+      ;;
+  esac
+}
+
+# Exit with a clear message unless the current OS is in the allowed list.
+# Usage: require_os macos
+#        require_os linux wsl
+require_os() {
+  local current allowed
+  current="$(detect_os)"
+  for allowed in "$@"; do
+    if [[ "$current" == "$allowed" ]]; then
+      return 0
+    fi
+  done
+  echo "This module is for $* only (detected: $current)." >&2
+  exit 1
+}
+
+# Eval brew shellenv from the first known prefix that exists.
+_brew_shellenv() {
+  if [[ -x /opt/homebrew/bin/brew ]]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+  elif [[ -x /usr/local/bin/brew ]]; then
+    eval "$(/usr/local/bin/brew shellenv)"
+  elif [[ -x /home/linuxbrew/.linuxbrew/bin/brew ]]; then
+    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+  fi
+}
+
 ensure_homebrew() {
   if command -v brew >/dev/null 2>&1; then
     echo "Homebrew already installed."
     return
   fi
+
+  _brew_shellenv
+  if command -v brew >/dev/null 2>&1; then
+    echo "Homebrew already installed."
+    return
+  fi
+
+  local os
+  os="$(detect_os)"
+  if [[ "$os" == "linux" || "$os" == "wsl" ]]; then
+    echo "Linuxbrew needs a compiler toolchain on fresh Ubuntu/Debian."
+    echo "  If install fails, run: sudo apt update && sudo apt install -y build-essential curl file git"
+  fi
+
   echo "Installing Homebrew..."
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-  if [[ -x /opt/homebrew/bin/brew ]]; then
-    eval "$(/opt/homebrew/bin/brew shellenv)"
-  elif [[ -x /usr/local/bin/brew ]]; then
-    eval "$(/usr/local/bin/brew shellenv)"
+  _brew_shellenv
+
+  if ! command -v brew >/dev/null 2>&1; then
+    echo "Homebrew install finished but 'brew' is not on PATH." >&2
+    echo "Add brew to your shell profile, then re-run this module." >&2
+    if [[ "$os" == "linux" || "$os" == "wsl" ]]; then
+      echo "  echo 'eval \"\$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)\"' >> ~/.zprofile" >&2
+    fi
+    exit 1
   fi
 }
 
@@ -74,4 +142,17 @@ clone_if_missing() {
     echo "  installing $name"
     git clone --depth=1 "$url" "$dest"
   fi
+}
+
+# Portable octal mode for a file (e.g. 600). Empty string if unreadable.
+file_mode() {
+  local path="$1"
+  case "$(detect_os)" in
+    macos)
+      stat -f '%Lp' "$path" 2>/dev/null
+      ;;
+    *)
+      stat -c '%a' "$path" 2>/dev/null
+      ;;
+  esac
 }

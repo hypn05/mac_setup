@@ -22,6 +22,9 @@ brew "tlrc"        # tldr client (simplified man pages)
 # Data munging
 brew "yq"   # YAML/JSON/XML processor (the jq of YAML)
 
+# Clipboard backends (xclip / wl-clipboard) are installed by modules/zsh.sh on
+# Linux/WSL only — wl-clipboard is Linux-only and must not be in this Brewfile.
+
 # Helix/glow/tmux live in Brewfile.editor (./install.sh editor) so the shell
 # setup doesn't force an editor/multiplexer opinion on you. zshrc and
 # shortcuts.zsh both auto-detect their presence either way.

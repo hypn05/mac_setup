@@ -1,0 +1,14 @@
+#!/usr/bin/env sh
+# macOS-compatible clipboard copy: stdin → system clipboard.
+# Linked to ~/.local/bin/pbcopy on Linux/WSL when native pbcopy is absent,
+# so the same shortcuts/scripts work across macOS, Linux, and WSL.
+if command -v wl-copy >/dev/null 2>&1; then
+  exec wl-copy
+elif command -v xclip >/dev/null 2>&1; then
+  exec xclip -selection clipboard
+elif command -v clip.exe >/dev/null 2>&1; then
+  exec clip.exe
+else
+  echo "pbcopy: no clipboard backend (install wl-clipboard or xclip)" >&2
+  exit 1
+fi

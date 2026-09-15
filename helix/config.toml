@@ -1,6 +1,6 @@
 # Helix — terminal editor (replaces default vim for EDITOR/VISUAL)
 # Docs: https://docs.helix-editor.com/
-# Linked to ~/.config/helix/config.toml by the zsh module.
+# Linked to ~/.config/helix/config.toml by the editor module.
 # Edit: hxconfig   |  Tutorial: hx --tutor
 
 theme = "dark_plus"

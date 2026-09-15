@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 # iterm module: iTerm2 + shell integration (Nerd Font is opt-in, see Brewfile.iterm)
+# macOS only — Linux/WSL users should use their own terminal emulator.
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=lib.sh
 source "$SCRIPT_DIR/modules/lib.sh"
+
+require_os macos
 
 ensure_homebrew
 brew_bundle "$SCRIPT_DIR/Brewfile.iterm"

@@ -22,6 +22,36 @@ _sc_add() {
   alias -- "$name=$cmd"
 }
 
+# Portable clipboard. Prefer pbcopy/pbpaste (native on macOS; shims on Linux/WSL
+# from bin/pbcopy + bin/pbpaste) so every shortcut feels identical across OSes.
+_sc_clipboard_copy() {
+  if (( $+commands[pbcopy] )); then
+    pbcopy
+  elif (( $+commands[wl-copy] )); then
+    wl-copy
+  elif (( $+commands[xclip] )); then
+    xclip -selection clipboard
+  elif (( $+commands[clip.exe] )); then
+    clip.exe
+  else
+    return 1
+  fi
+}
+
+_sc_clipboard_paste() {
+  if (( $+commands[pbpaste] )); then
+    pbpaste
+  elif (( $+commands[wl-paste] )); then
+    wl-paste
+  elif (( $+commands[xclip] )); then
+    xclip -selection clipboard -o
+  elif (( $+commands[powershell.exe] )); then
+    powershell.exe -NoProfile -Command Get-Clipboard
+  else
+    return 1
+  fi
+}
+
 # -------------------------- Git ---------------------------------------------
 # For you-should-use: expansion should be a prefix of what you type.
 _sc_add gst    git "Git status"                    'git status'
@@ -358,14 +388,27 @@ _SC_DESC[starconfig]="Edit starship prompt config"
 _SC_CAT[starconfig]="util"
 
 scpath() {
-  if (( $+commands[pbcopy] )); then
-    pwd | pbcopy && print "path copied: $(pwd)"
+  if print -n -- "$(pwd)" | _sc_clipboard_copy; then
+    print "path copied: $(pwd)"
   else
     pwd
   fi
 }
-_SC_DESC[scpath]="Copy current path to clipboard"
+_SC_DESC[scpath]="Copy current path to clipboard (pbcopy)"
 _SC_CAT[scpath]="util"
+
+# Same names/behavior as macOS: pipe into pbcopy, or pbpaste to print.
+# On Linux/WSL the zsh module installs shims in ~/.local/bin.
+clipcopy() { _sc_clipboard_copy; }
+clippaste() { _sc_clipboard_paste; }
+_SC_DESC[clipcopy]="Copy stdin to clipboard (same as pbcopy)"
+_SC_CAT[clipcopy]="util"
+_SC_DESC[clippaste]="Paste clipboard to stdout (same as pbpaste)"
+_SC_CAT[clippaste]="util"
+_SC_DESC[pbcopy]="Copy stdin to clipboard (macOS name — shimmed on Linux/WSL)"
+_SC_CAT[pbcopy]="util"
+_SC_DESC[pbpaste]="Paste clipboard to stdout (macOS name — shimmed on Linux/WSL)"
+_SC_CAT[pbpaste]="util"
 
 please() { sudo $(fc -ln -1) }
 _SC_DESC[please]="Re-run last command with sudo"
@@ -507,7 +550,7 @@ PREFIX KEYS  (press Ctrl-a, then key)
 
 MOUSE
   Click to select pane/window; drag borders to resize;
-  scroll history; drag to select + copy (pbcopy)
+  scroll history; drag to select + copy (tmux-copy)
 
 TYPICAL FLOW
   tn securescope     # one session per project
@@ -524,8 +567,16 @@ EOF
 fi
 
 # -------------------------- Key bindings (documented) -----------------------
+# Terminal chords are the same mental model on every OS:
+#   macOS iTerm  → Cmd+C / Cmd+V
+#   Linux WezTerm → Super+C / Super+V  (same physical keys on a Mac keyboard)
+#   Also: Ctrl+Shift+C/V everywhere WezTerm runs (Linux convention fallback)
 typeset -ga _SC_KEYS
 _SC_KEYS=(
+  "keys|Cmd/Super+C|Copy selection (iTerm on macOS · WezTerm on Linux/Windows)"
+  "keys|Cmd/Super+V|Paste (iTerm on macOS · WezTerm on Linux/Windows)"
+  "keys|Ctrl+Shift+C|Copy selection (WezTerm / Linux terminal fallback)"
+  "keys|Ctrl+Shift+V|Paste (WezTerm / Linux terminal fallback)"
   "keys|Ctrl+R|History search (atuin if installed, else fzf)"
   "keys|Ctrl+T|Fuzzy insert file path (fzf + fd)"
   "keys|Alt+C|Fuzzy cd into directory (fzf + fd)"
@@ -538,6 +589,7 @@ _SC_KEYS=(
   "keys|Ctrl+a|tmux prefix (then c/|/-/hjkl/d/r/? …)"
   "keys|Ctrl+a then ?|List all tmux key bindings"
   "keys|Ctrl+a then r|Reload ~/.tmux.conf"
+  "keys|tmux y / mouse drag|Yank selection to clipboard (tmux-copy → pbcopy)"
 )
 
 # -------------------------- Discovery ---------------------------------------
@@ -641,7 +693,7 @@ _sc_doctor() {
   local root
   root="$(_sc_doctor_repo_root)"
   if [[ -z "$root" || ! -x "$root/install.sh" ]]; then
-    print -u2 "sc doctor: can't find the mac_setup repo (~/.zsh/shortcuts.zsh isn't a symlink into it)"
+    print -u2 "sc doctor: can't find the dev_setup repo (~/.zsh/shortcuts.zsh isn't a symlink into it)"
     return 1
   fi
   "$root/install.sh" doctor
@@ -710,8 +762,7 @@ shortcuts() {
 
   [[ -z "$selected" ]] && return 0
   sc=$(print -r -- "$selected" | awk -F'|' '{gsub(/^ +| +$/,"",$1); print $1}')
-  if (( $+commands[pbcopy] )); then
-    print -n -- "$sc" | pbcopy 2>/dev/null
+  if print -n -- "$sc" | _sc_clipboard_copy 2>/dev/null; then
     print "→ $sc  (copied to clipboard)"
   else
     print "→ $sc"

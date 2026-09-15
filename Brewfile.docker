@@ -1,4 +1,5 @@
-# Brewfile.docker — run via: ./install.sh docker
+# Brewfile.docker — macOS only (./install.sh docker on Darwin).
+# Linux/WSL use Engine apt install or Docker Desktop WSL integration instead.
 # Canonical cask name is "docker-desktop" ("docker" is an alias homebrew-cask
 # kept for the rename — using the real name avoids relying on that alias).
 cask "docker-desktop"   # Docker Desktop — Docker Engine, CLI, and Compose v2 plugin
