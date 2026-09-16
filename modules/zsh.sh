@@ -45,6 +45,13 @@ link_file "$SCRIPT_DIR/zsh/zshrc" "$HOME/.zshrc"
 link_file "$SCRIPT_DIR/zsh/shortcuts.zsh" "$HOME/.zsh/shortcuts.zsh"
 link_file "$SCRIPT_DIR/starship.toml" "$HOME/.config/starship.toml"
 
+# theme.sh — 400+ terminal palettes with fzf preview (better UX than walh-shell
+# for browsing). Linked into ~/.local/bin so `th` / `theme.sh` work everywhere.
+echo "Linking theme.sh (terminal theme switcher with fzf preview)"
+mkdir -p "$HOME/.local/bin"
+chmod +x "$SCRIPT_DIR/bin/theme.sh"
+link_file "$SCRIPT_DIR/bin/theme.sh" "$HOME/.local/bin/theme.sh"
+
 # On Linux/WSL, install clipboard backends + macOS-named shims so the same
 # shortcuts work (OMZ copyfile/copypath, scpath, pipes like `cmd | pbcopy`).
 os="$(detect_os)"
@@ -82,4 +89,5 @@ echo "  - fill in ~/.zshrc.secrets with tokens"
 echo "  - on Linux/WSL, if 'brew' is missing in new shells, add to ~/.zprofile:"
 echo "      eval \"\$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)\""
 echo "  - run the 'editor' module for Helix/tmux (EDITOR falls back to vim/vi without it)"
+echo "  - themes: th / thd / thl  (fzf preview) · thlive (live browse) · sc theme"
 echo "  - optional: atuin login   # sync history across machines (works local-only without this)"

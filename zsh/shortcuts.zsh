@@ -397,6 +397,45 @@ scpath() {
 _SC_DESC[scpath]="Copy current path to clipboard (pbcopy)"
 _SC_CAT[scpath]="util"
 
+# -------------------------- Theme (theme.sh) --------------------------------
+# Prefer theme.sh over walh-shell: fzf picker with a real preview pane (-i),
+# or live-apply-as-you-browse (-i2). 400+ palettes; works via OSC in iTerm/WezTerm.
+if (( $+commands[theme.sh] )); then
+  th() {
+    if [[ $# -gt 0 ]]; then
+      theme.sh "$@"
+    else
+      theme.sh -i
+    fi
+  }
+  _SC_DESC[th]="Interactive theme picker with fzf preview (or: th <name>)"
+  _SC_CAT[th]="theme"
+
+  thd() { theme.sh --dark -i; }
+  _SC_DESC[thd]="Interactive dark-theme picker (fzf preview)"
+  _SC_CAT[thd]="theme"
+
+  thl() { theme.sh --light -i; }
+  _SC_DESC[thl]="Interactive light-theme picker (fzf preview)"
+  _SC_CAT[thl]="theme"
+
+  thlive() { theme.sh -i2; }
+  _SC_DESC[thlive]="Browse themes with live terminal apply (no preview pane)"
+  _SC_CAT[thlive]="theme"
+
+  thrand() { theme.sh -r; }
+  _SC_DESC[thrand]="Random terminal theme"
+  _SC_CAT[thrand]="theme"
+
+  thls() { theme.sh -l; }
+  _SC_DESC[thls]="List all theme.sh palettes"
+  _SC_CAT[thls]="theme"
+
+  alias theme=th
+  _SC_DESC[theme]="Alias for th (theme picker)"
+  _SC_CAT[theme]="theme"
+fi
+
 # Same names/behavior as macOS: pipe into pbcopy, or pbpaste to print.
 # On Linux/WSL the zsh module installs shims in ~/.local/bin.
 clipcopy() { _sc_clipboard_copy; }
@@ -585,6 +624,7 @@ _SC_KEYS=(
   "keys|Right/End|Accept autosuggestion"
   "keys|Ctrl+Right|Forward one word / partial accept"
   "keys|Ctrl+Left|Backward one word"
+  "keys|Ctrl+O|Previous terminal theme (theme.sh history)"
   "keys|Esc Esc|Prefix line with sudo (OMZ sudo plugin)"
   "keys|Ctrl+a|tmux prefix (then c/|/-/hjkl/d/r/? …)"
   "keys|Ctrl+a then ?|List all tmux key bindings"
@@ -601,7 +641,7 @@ _sc_print_table() {
 
   local exact_cat=0
   local -a known_cats
-  known_cats=(git k8s docker files search util keys atuin editor tmux)
+  known_cats=(git k8s docker files search util keys atuin editor tmux theme)
   [[ -n "$query" && ${known_cats[(Ie)$query]} -ne 0 ]] && exact_cat=1
 
   for name in ${(ok)_SC_DESC}; do

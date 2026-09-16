@@ -65,7 +65,7 @@ macOS). If the daemon is missing, `./install.sh docker` prints those steps; set
 | `git`    | `git`, `gh` (+ curated `gh` aliases), `git-delta`, `lazygit`, and `~/.gitconfig` |
 | `docker` | macOS: Docker Desktop · Linux: Engine + Compose · WSL: Desktop integration (or Engine fallback) |
 | `k8s`    | `kubectl`, `kubectx`/`kubens`, `k9s`, `stern` |
-| `zsh`    | oh-my-zsh + plugins, starship, atuin, modern CLIs, `sc` shortcuts, **pbcopy/pbpaste shims** on Linux/WSL |
+| `zsh`    | oh-my-zsh + plugins, starship, atuin, **theme.sh** (400+ palettes, fzf preview), `sc` shortcuts, **pbcopy/pbpaste shims** on Linux/WSL |
 | `editor` | Helix, glow, tmux (+ configs) and `tmux-copy` clipboard helper |
 | `wezterm`| WezTerm + shared config — **Super+C/V = macOS Cmd+C/V** (recommended on Linux/WSL) |
 | `iterm`  | iTerm2 + shell integration (**macOS only**; Nerd Font is opt-in) |
@@ -114,6 +114,7 @@ modules/
 Brewfile.*               one per module (formulas reuse on Linuxbrew; docker cask is macOS)
 bin/pbcopy pbpaste       macOS-named clipboard shims for Linux/WSL
 bin/tmux-copy            tmux copy-pipe → pbcopy (native or shim)
+bin/theme.sh             terminal theme switcher (400+ palettes, fzf preview)
 wezterm/wezterm.lua      Super+C/V = Cmd+C/V; linked to ~/.wezterm.lua
 git/gitconfig.template   copied to ~/.gitconfig once (yours to edit after)
 zsh/
@@ -171,6 +172,24 @@ and `YSU_IGNORED_ALIASES=(g k)`.
 
 **Modern CLI tools (Brewfile.zsh):** starship, zoxide, autojump, direnv, atuin,
 fzf, fd, ripgrep, bat, eza, dust, duf, tlrc, yq.
+
+**Terminal themes (`theme.sh`):** we ship [lemnos/theme.sh](https://github.com/lemnos/theme.sh)
+instead of walh-shell — same instant OSC palette switching, but with an **fzf
+preview pane** so you can browse before committing (walh’s gap). Also: live
+browse mode, dark/light filters, 400+ themes, history restore on new shells.
+
+```sh
+th              # interactive picker with preview (fzf)
+thd / thl       # dark-only / light-only picker
+thlive          # apply each theme to the terminal as you arrow through
+th gruvbox      # set a theme by name
+thrand          # random theme
+sc theme        # registry of theme shortcuts
+# Ctrl+O        # previous theme
+```
+
+Works in iTerm2 and WezTerm (OSC 4/11). tmux has `allow-passthrough` enabled so
+colors can update from inside a session.
 
 **Doctor:** `sc doctor` (or `./install.sh doctor` from the repo) is a
 read-only pass over every module — installed brew formulae (and OS-aware docker

@@ -192,6 +192,15 @@ else
   fail=1
 fi
 
+# theme.sh — terminal palette switcher with fzf preview
+check_link "$HOME/.local/bin/theme.sh" "$SCRIPT_DIR/bin/theme.sh"
+if command -v theme.sh >/dev/null 2>&1; then
+  echo "  [ok]      theme.sh on PATH"
+else
+  echo "  [warn]    theme.sh not on PATH (ensure ~/.local/bin is on PATH)"
+  fail=1
+fi
+
 section "editor"
 check_brewfile "$SCRIPT_DIR/Brewfile.editor"
 check_link "$HOME/.config/helix/config.toml" "$SCRIPT_DIR/helix/config.toml"

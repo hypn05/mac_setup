@@ -159,6 +159,18 @@ fi
 # iTerm2 shell integration (installed by the iterm module)
 [[ -f "$HOME/.iterm2_shell_integration.zsh" ]] && source "$HOME/.iterm2_shell_integration.zsh"
 
+# theme.sh — restore last terminal palette (OSC colors). Interactive picker is
+# `th` / `thd` / `thl` (fzf + preview). See sc theme.
+if (( $+commands[theme.sh] )); then
+  if [[ -e "${XDG_CONFIG_HOME:-$HOME}/.theme_history" || -e "$HOME/.theme_history" ]]; then
+    theme.sh "$(theme.sh -l | tail -n1)" >/dev/null 2>&1 || true
+  fi
+  # Ctrl+O → previous theme (undo last switch)
+  last_theme() { theme.sh "$(theme.sh -l | tail -n2 | head -n1)"; }
+  zle -N last_theme
+  bindkey '^O' last_theme
+fi
+
 # ── local snippets (~/.zsh/*.zsh, e.g. shortcuts.zsh) ────────────────────
 [[ -f "$HOME/.zsh/shortcuts.zsh" ]] && source "$HOME/.zsh/shortcuts.zsh"
 for _zsh_snippet in "$HOME"/.zsh/*.zsh(N); do
