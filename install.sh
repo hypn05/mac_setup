@@ -24,7 +24,7 @@ COMMON_MODULES=(git docker k8s zsh editor)
 # WezTerm: in `all` on Linux/WSL (Cmd/Super+C/V parity); optional on macOS (iTerm is default).
 WEZTERM_MODULE=wezterm
 # macOS-only modules.
-MACOS_ONLY=(iterm)
+MACOS_ONLY=(iterm touchid)
 
 module_allowed() {
   local m="$1" x
@@ -71,6 +71,7 @@ Modules (mix and match — nothing here depends on another module):
   editor   Helix, glow, tmux (+ their configs) — optional, not pulled in by zsh
   wezterm  WezTerm + Mac-like Cmd/Super+C/V copy-paste (all OSes; recommended on Linux/WSL)
   iterm    iTerm2 + shell integration (macOS only; Nerd Font is opt-in)
+  touchid  Touch ID for the sudo password prompt (macOS only, Touch ID Macs)
   all      every installable module for this OS ($(all_modules_for_os))
 
   doctor   read-only health check across every module — installs nothing
@@ -109,12 +110,14 @@ for arg in "$@"; do
     doctor)
       modules+=(doctor)
       ;;
-    git|docker|k8s|zsh|editor|wezterm|iterm)
+    git|docker|k8s|zsh|editor|wezterm|iterm|touchid)
       if ! module_allowed "$arg"; then
         echo "Module '$arg' is not available on $OS." >&2
         if [[ "$arg" == "iterm" ]]; then
           echo "  iterm is macOS-only. On Linux/WSL run: ./install.sh wezterm" >&2
           echo "  (Super+C / Super+V match macOS Cmd+C / Cmd+V)." >&2
+        elif [[ "$arg" == "touchid" ]]; then
+          echo "  touchid is macOS-only (requires Touch ID hardware)." >&2
         fi
         exit 1
       fi

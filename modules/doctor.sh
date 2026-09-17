@@ -237,9 +237,20 @@ if [[ "$OS" == "macos" ]]; then
   section "iterm"
   check_brewfile "$SCRIPT_DIR/Brewfile.iterm"
   check_exists "$HOME/.iterm2_shell_integration.zsh"
+
+  section "touchid"
+  if grep -q 'pam_tid\.so' /etc/pam.d/sudo 2>/dev/null || \
+     { [[ -f /etc/pam.d/sudo_local ]] && grep -q 'pam_tid\.so' /etc/pam.d/sudo_local; }; then
+    echo "  [ok]      Touch ID enabled for sudo (pam_tid.so)"
+  else
+    echo "  [missing] Touch ID for sudo not configured (re-run: ./install.sh touchid)"
+    fail=1
+  fi
 else
   section "iterm"
   echo "  [skip]    iterm is macOS-only — use wezterm for Cmd/Super+C/V parity"
+  section "touchid"
+  echo "  [skip]    touchid is macOS-only"
 fi
 
 echo ""

@@ -69,6 +69,7 @@ macOS). If the daemon is missing, `./install.sh docker` prints those steps; set
 | `editor` | Helix, glow, tmux (+ configs) and `tmux-copy` clipboard helper |
 | `wezterm`| WezTerm + shared config — **Super+C/V = macOS Cmd+C/V** (recommended on Linux/WSL) |
 | `iterm`  | iTerm2 + shell integration (**macOS only**; Nerd Font is opt-in) |
+| `touchid`| Touch ID for the `sudo` password prompt (**macOS only**, Touch ID Macs) |
 | `all`    | every installable module for the detected OS |
 | `doctor` | read-only health check — installs nothing |
 
@@ -91,6 +92,7 @@ script (`./modules/zsh.sh`) if you’d rather skip the dispatcher.
 | git, k8s, zsh, editor, wezterm | ✓ | ✓ | ✓ |
 | docker | Desktop cask | Engine (apt) | Desktop+WSL preferred |
 | iterm | ✓ | — | — |
+| touchid | ✓ | — | — |
 
 ### Same shortcuts everywhere (copy / paste)
 
@@ -222,6 +224,12 @@ picks `pbcopy` / `wl-copy` / `xclip` / `clip.exe` (WSL). Shell helpers: `tn` /
 `ta` / `ts` / `tls` / `tk` / `thelp`. Cheatsheet: `thelp` or `sc tmux`.
 
 ## Other module notes
+
+**touchid** (macOS): enables Touch ID for `sudo` by adding `pam_tid.so` to the PAM
+stack. On macOS Ventura+ it writes `/etc/pam.d/sudo_local`, which survives OS
+updates; on older macOS it patches `/etc/pam.d/sudo` (re-run after upgrading).
+The password still works as a fallback (SSH, wet fingers). Test with
+`sudo -k && sudo true`.
 
 **k8s:** `k9s`, `stern` (+ `k9` / `kstern` shortcuts when present, via the zsh module).
 
