@@ -1,0 +1,21 @@
+# Line endings: everything in this repo is executed/sourced on macOS, Linux,
+# or WSL — keep LF. With core.autocrlf=true, Windows git checks out CRLF,
+# which breaks bash/zsh via /mnt/c:
+#   /usr/bin/env: 'bash\r': No such file or directory
+#   command not found: ^M
+* text=auto eol=lf
+
+# Windows host scripts stay CRLF.
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binary files (future-proofing) — never line-ending converted.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.icns binary
+*.zip binary
+*.tar.gz binary
