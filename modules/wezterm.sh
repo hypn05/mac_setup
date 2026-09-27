@@ -15,11 +15,8 @@ _install_wezterm_linux() {
     return 0
   fi
 
-  if command -v brew >/dev/null 2>&1 && brew info wezterm >/dev/null 2>&1; then
-    echo "Installing WezTerm via Homebrew..."
-    brew install wezterm
-    return 0
-  fi
+  # No Homebrew on purpose: wezterm ships only as a macOS cask, so on Linux
+  # `brew install wezterm` dies with "This cask requires macOS".
 
   if command -v apt-get >/dev/null 2>&1; then
     echo "Installing WezTerm via apt (Wez's fury repo)..."
@@ -34,7 +31,14 @@ _install_wezterm_linux() {
     return 0
   fi
 
-  echo "Could not auto-install WezTerm. Install from https://wezterm.org/ and re-run." >&2
+  if command -v flatpak >/dev/null 2>&1; then
+    echo "Installing WezTerm via Flatpak (Flathub)..."
+    flatpak install -y flathub org.wezfurlong.wezterm
+    return 0
+  fi
+
+  echo "Could not auto-install WezTerm (need apt or flatpak)." >&2
+  echo "Install manually: https://wezterm.org/install/linux.html then re-run." >&2
   exit 1
 }
 
@@ -77,7 +81,6 @@ case "$OS" in
     ;;
 
   linux)
-    ensure_homebrew
     _install_wezterm_linux
     _link_config_unix
     echo ""
