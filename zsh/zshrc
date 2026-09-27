@@ -38,6 +38,14 @@ if ! (( $+commands[brew] )); then
   [[ -x /opt/homebrew/bin/brew ]] && eval "$(/opt/homebrew/bin/brew shellenv)"
 fi
 
+# WSL + Docker Desktop: the bundled WSL CLI can fail to resolve the default
+# context ("Failed to initialize: protocol not available") even though
+# /var/run/docker.sock is live. Pointing DOCKER_HOST at the socket bypasses
+# context resolution entirely. Also correct for a native engine inside WSL.
+if [[ -n "${WSL_DISTRO_NAME:-}" && -S /var/run/docker.sock && -z "${DOCKER_HOST:-}" ]]; then
+  export DOCKER_HOST="unix:///var/run/docker.sock"
+fi
+
 # Plugin order notes:
 # - fzf-tab must load AFTER compinit (via oh-my-zsh) but BEFORE widgets that
 #   wrap the line editor (autosuggestions / syntax-highlighting).

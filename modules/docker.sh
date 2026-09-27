@@ -70,6 +70,13 @@ case "$OS" in
     ;;
 
   wsl)
+    # Docker Desktop's bundled WSL CLI can fail to resolve the default context
+    # ("protocol not available") even when /var/run/docker.sock is live;
+    # DOCKER_HOST bypasses context resolution. zshrc exports the same for shells.
+    if [[ -S /var/run/docker.sock && -z "${DOCKER_HOST:-}" ]]; then
+      export DOCKER_HOST=unix:///var/run/docker.sock
+    fi
+
     if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
       echo "Docker CLI already talks to a running daemon (likely Docker Desktop WSL integration)."
       docker compose version >/dev/null 2>&1 || echo "  warning: 'docker compose' not found — enable Compose in Docker Desktop."

@@ -113,6 +113,10 @@ case "$OS" in
     check_brewfile "$SCRIPT_DIR/Brewfile.docker"
     ;;
   wsl)
+    # Same Docker Desktop WSL CLI quirk as modules/docker.sh — see there.
+    if [[ -S /var/run/docker.sock && -z "${DOCKER_HOST:-}" ]]; then
+      export DOCKER_HOST=unix:///var/run/docker.sock
+    fi
     if command -v docker >/dev/null 2>&1; then
       echo "  [ok]      docker CLI"
       if docker info >/dev/null 2>&1; then
