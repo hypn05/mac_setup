@@ -14,37 +14,62 @@ _install_docker_engine_apt() {
   fi
 
   if ! command -v apt-get >/dev/null 2>&1; then
-    echo "This Linux install path expects apt (Ubuntu/Debian)." >&2
+    echo "This Linux install path expects apt (Ubuntu/Debian/Kali)." >&2
     echo "Install Docker Engine + the Compose plugin for your distro, then re-run doctor." >&2
     exit 1
   fi
 
-  echo "Installing Docker Engine (official apt repository)..."
-  sudo apt-get update -y
-  sudo apt-get install -y ca-certificates curl
-  sudo install -m 0755 -d /etc/apt/keyrings
-  if [[ ! -f /etc/apt/keyrings/docker.asc ]]; then
-    sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-    sudo chmod a+r /etc/apt/keyrings/docker.asc
-  fi
-
   # shellcheck disable=SC1091
   . /etc/os-release
+  local os_id="${ID:-}"
   local codename="${VERSION_CODENAME:-}"
-  if [[ -z "$codename" ]]; then
-    codename="$(lsb_release -cs 2>/dev/null || true)"
-  fi
-  if [[ -z "$codename" ]]; then
-    echo "Could not detect Ubuntu/Debian codename for the Docker apt repo." >&2
-    exit 1
-  fi
 
-  echo \
-    "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $codename stable" \
-    | sudo tee /etc/apt/sources.list.d/docker.list >/dev/null
+  if [[ "$os_id" == "kali" ]]; then
+    # Docker's apt repos don't serve Kali (codename "kali-rolling" 404s there,
+    # and a stale entry breaks apt for the whole system). Kali ships its own.
+    echo "Kali Linux detected — installing docker.io from Kali's repositories..."
+    sudo apt-get update -y
+    sudo apt-get install -y docker.io
+    sudo apt-get install -y docker-compose-v2 2>/dev/null \
+      || sudo apt-get install -y docker-compose 2>/dev/null \
+      || echo "  note: no Compose package found — install a Compose plugin for 'docker compose'"
+  else
+    local repo_os=""
+    case "$os_id" in
+      ubuntu) repo_os=ubuntu ;;
+      debian) repo_os=debian ;;
+      *)
+        echo "Unsupported distro for Docker's apt repo: ${os_id:-unknown}." >&2
+        echo "Supported here: ubuntu, debian, kali. For anything else use your distro's" >&2
+        echo "docker package or https://docs.docker.com/engine/install/ then re-run doctor." >&2
+        exit 1
+        ;;
+    esac
 
-  sudo apt-get update -y
-  sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+    if [[ -z "$codename" ]]; then
+      codename="$(lsb_release -cs 2>/dev/null || true)"
+    fi
+    if [[ -z "$codename" ]]; then
+      echo "Could not detect Ubuntu/Debian codename for the Docker apt repo." >&2
+      exit 1
+    fi
+
+    echo "Installing Docker Engine (official Docker apt repo: $repo_os/$codename)..."
+    sudo apt-get update -y
+    sudo apt-get install -y ca-certificates curl
+    sudo install -m 0755 -d /etc/apt/keyrings
+    if [[ ! -f /etc/apt/keyrings/docker.asc ]]; then
+      sudo curl -fsSL "https://download.docker.com/linux/$repo_os/gpg" -o /etc/apt/keyrings/docker.asc
+      sudo chmod a+r /etc/apt/keyrings/docker.asc
+    fi
+
+    echo \
+      "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/$repo_os $codename stable" \
+      | sudo tee /etc/apt/sources.list.d/docker.list >/dev/null
+
+    sudo apt-get update -y
+    sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+  fi
 
   if getent group docker >/dev/null 2>&1; then
     if ! id -nG "$USER" | grep -qw docker; then
